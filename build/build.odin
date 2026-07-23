@@ -75,7 +75,7 @@ cmd_build_example_shaders_nosl :: proc(example: Example) -> bool
     return res
 }
 
-Shader_Stage :: enum { Vertex, Fragment, Compute }
+Shader_Stage :: enum { Vertex, Fragment, Compute, Mesh, Amplification }
 Shader_Stages :: distinct bit_set[Shader_Stage]
 
 cmd_build_example_shaders_slang :: proc(example: Example) -> bool
@@ -112,6 +112,24 @@ cmd_build_example_shaders_slang :: proc(example: Example) -> bool
                             "-fvk-use-c-layout", "-fvk-use-scalar-layout", "-force-glsl-scalar-layout",
                             "-validate-ir", "-no-mangle", "-entry", "computeMain",
                             "-stage", "compute", shader, "-o", spv_path)
+        }
+        if .Mesh in stages
+        {
+            spv_path := fmt.tprintf("%v/%v.mesh.spv", dir, os.stem(shader))
+            res &= run_task("slangc",
+                            "-target", "spirv",
+                            "-fvk-use-c-layout", "-fvk-use-scalar-layout", "-force-glsl-scalar-layout",
+                            "-validate-ir", "-no-mangle", "-entry", "meshMain",
+                            "-stage", "mesh", shader, "-o", spv_path)
+        }
+        if .Amplification in stages
+        {
+            spv_path := fmt.tprintf("%v/%v.task.spv", dir, os.stem(shader))
+            res &= run_task("slangc",
+                            "-target", "spirv",
+                            "-fvk-use-c-layout", "-fvk-use-scalar-layout", "-force-glsl-scalar-layout",
+                            "-validate-ir", "-no-mangle", "-entry", "taskMain",
+                            "-stage", "amplification", shader, "-o", spv_path)
         }
     }
 
@@ -401,5 +419,7 @@ get_slang_stages :: proc(path: string) -> Shader_Stages
     if strings.contains(content_str, "[shader(\"vertex\")]")   do res += { .Vertex }
     if strings.contains(content_str, "[shader(\"fragment\")]") do res += { .Fragment }
     if strings.contains(content_str, "[shader(\"compute\")]")  do res += { .Compute }
+    if strings.contains(content_str, "[shader(\"mesh\")]")     do res += { .Mesh }
+    if strings.contains(content_str, "[shader(\"amplification\")]") do res += { .Amplification }
     return res
 }

@@ -39,8 +39,16 @@ public struct __PushConstants_Compute
     public uint64_t computeData;
 };
 
+public struct __PushConstants_Mesh
+{
+    public uint64_t taskData;
+    public uint64_t meshletData;
+    public uint64_t fragData;
+};
+
 [[vk::push_constant]] __PushConstants_Graphics __push_graphics;
 [[vk::push_constant]] __PushConstants_Compute __push_compute;
+[[vk::push_constant]] __PushConstants_Mesh __push_mesh;
 
 // Standard Vulkan indirect draw command structure
 public struct DrawIndexedIndirectCommand

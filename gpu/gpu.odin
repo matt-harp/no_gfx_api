@@ -57,6 +57,9 @@ Cubemap_Side :: enum { PX = 0, NX = 1, PY = 2, NY = 3, PZ = 4, NZ = 5 }
 Usage :: enum { Sampled = 0, Storage, Transfer_Src, Color_Attachment, Depth_Stencil_Attachment }
 Usage_Flags :: bit_set[Usage; u32]
 Shader_Type_Graphics :: enum { Vertex = 0, Fragment }
+Shader_Type_Compute :: struct {}
+Shader_Type_Mesh :: enum { Task = 0, Mesh, Fragment }
+Shader_Type :: union { Shader_Type_Graphics, Shader_Type_Compute, Shader_Type_Mesh }
 Load_Op :: enum { Clear = 0, Load, Dont_Care }
 Store_Op :: enum { Store = 0, Dont_Care, Resolve, Resolve_And_Store }
 Compare_Op :: enum { Never = 0, Less, Equal, Less_Equal, Greater, Not_Equal, Greater_Equal, Always }
@@ -69,7 +72,7 @@ Depth_Mode :: enum { Read = 0, Write }
 Depth_Flags :: bit_set[Depth_Mode; u32]
 Hazard :: enum { Draw_Arguments = 0, Descriptors, Depth_Stencil, BVHs }
 Hazard_Flags :: bit_set[Hazard; u32]
-Stage :: enum { Transfer = 0, Compute, Raster_Color_Out, Fragment_Shader, Vertex_Shader, Build_BVH, All }
+Stage :: enum { Transfer = 0, Compute, Raster_Color_Out, Fragment_Shader, Vertex_Shader, Build_BVH, Task_Shader, Mesh_Shader, All }
 Color_Component_Flag :: enum { R = 0, G = 1, B = 2, A = 3 }
 Color_Component_Flags :: distinct bit_set[Color_Component_Flag; u8]
 Color_Components_All :: Color_Component_Flags { .R, .G, .B, .A }
@@ -328,6 +331,7 @@ sampler_descriptor: proc(sampler_desc: Sampler_Desc, loc := #caller_location) ->
 // Shaders
 shader_create: proc(code: []u32, type: Shader_Type_Graphics, entry_point_name := "main", name := "", loc := #caller_location) -> Shader : _shader_create
 shader_create_compute: proc(code: []u32, group_size_x: u32, group_size_y: u32 = 1, group_size_z: u32 = 1, entry_point_name := "main", name := "", loc := #caller_location) -> Shader : _shader_create_compute
+shader_create_mesh: proc(code: []u32, type: Shader_Type_Mesh, group_size_x: u32 = 1, group_size_y: u32 = 1, group_size_z: u32 = 1, entry_point_name := "main", name := "", loc := #caller_location) -> Shader : _shader_create_mesh
 shader_destroy: proc(shader: Shader, loc := #caller_location) : _shader_destroy
 
 // Semaphores
@@ -371,6 +375,8 @@ cmd_barrier: proc(cmd_buf: Command_Buffer, before: Stage, after: Stage, hazards:
 
 cmd_set_shaders: proc(cmd_buf: Command_Buffer, vert_shader: Shader, frag_shader: Shader, loc := #caller_location) : _cmd_set_shaders
 cmd_set_compute_shader: proc(cmd_buf: Command_Buffer, compute_shader: Shader, loc := #caller_location) : _cmd_set_compute_shader
+cmd_set_task_shader: proc(cmd_buf: Command_Buffer, task_shader: Shader, loc := #caller_location) : _cmd_set_task_shader
+cmd_set_mesh_shaders: proc(cmd_buf: Command_Buffer, mesh_shader, frag_shader: Shader, loc := #caller_location) : _cmd_set_mesh_shaders
 cmd_set_depth_state: proc(cmd_buf: Command_Buffer, state: Depth_State, loc := #caller_location) : _cmd_set_depth_state
 cmd_set_raster_state: proc(cmd_buf: Command_Buffer, state: Raster_State, loc := #caller_location) : _cmd_set_raster_state
 cmd_set_blend_state: proc(cmd_buf: Command_Buffer, state: Blend_State, loc := #caller_location) : _cmd_set_blend_state
@@ -395,6 +401,9 @@ cmd_draw_indexed_indirect_raw: proc(cmd_buf: Command_Buffer, vertex_data, fragme
                                     index_format: Index_Format, indirect_arguments: gpuptr, loc := #caller_location) : _cmd_draw_indexed_indirect_raw
 cmd_draw_indexed_indirect_multi_raw: proc(cmd_buf: Command_Buffer, vertex_data, fragment_data, indices: gpuptr,
                                           index_format: Index_Format, indirect_arguments: gpuptr, stride: u32, draw_count: gpuptr, loc := #caller_location) : _cmd_draw_indexed_indirect_multi_raw
+cmd_draw_meshlets: proc(cmd_buf: Command_Buffer, task_data, meshlet_data, fragment_data: gpuptr, num_groups_x: u32, num_groups_y: u32 = 1, num_groups_z: u32 = 1, loc := #caller_location) : _cmd_draw_meshlets
+cmd_draw_meshlets_indirect: proc(cmd_buf: Command_Buffer, task_data, meshlet_data, fragment_data, dim: gpuptr, loc := #caller_location) : _cmd_draw_meshlets_indirect
+cmd_draw_meshlets_indirect_multi: proc(cmd_buf: Command_Buffer, task_data, meshlet_data, fragment_data, dim, draw_count: gpuptr, stride: u32, loc := #caller_location) : _cmd_draw_meshlets_indirect_multi
 
 cmd_build_blas: proc(cmd_buf: Command_Buffer, bvh: BVH, scratch_storage: gpuptr, shapes: []BVH_Shape, loc := #caller_location) : _cmd_build_blas
 cmd_build_tlas: proc(cmd_buf: Command_Buffer, bvh: BVH, scratch_storage: gpuptr, instances: gpuptr, loc := #caller_location) : _cmd_build_tlas

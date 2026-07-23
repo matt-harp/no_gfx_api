@@ -15,3 +15,4 @@ build/*
 !build/build.odin
 !build/SDL3.dll
 impl_enabled.odin
+.direnv/

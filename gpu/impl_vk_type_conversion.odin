@@ -5,12 +5,23 @@ package gpu
 import vk "vendor:vulkan"
 import "base:runtime"
 
-to_vk_shader_stage :: #force_inline proc(type: Shader_Type_Graphics) -> vk.ShaderStageFlags
+to_vk_shader_stage :: #force_inline proc(type: Shader_Type) -> vk.ShaderStageFlags
 {
-    switch type
+    switch v in type
     {
-        case .Vertex: return { .VERTEX }
-        case .Fragment: return { .FRAGMENT }
+        case Shader_Type_Graphics:
+            switch v {
+                case .Vertex: return { .VERTEX }
+                case .Fragment: return { .FRAGMENT }
+            }
+        case Shader_Type_Compute:
+            return { .COMPUTE }
+        case Shader_Type_Mesh:
+            switch v {
+                case .Task: return { .TASK_EXT }
+                case .Mesh: return { .MESH_EXT }
+                case .Fragment: return { .FRAGMENT }
+            }
     }
     return {}
 }
@@ -25,6 +36,8 @@ to_vk_stage :: #force_inline proc(stage: Stage) -> vk.PipelineStageFlags
         case .Fragment_Shader: return { .FRAGMENT_SHADER }
         case .Vertex_Shader: return { .VERTEX_SHADER }
         case .Build_BVH: return { .ACCELERATION_STRUCTURE_BUILD_KHR }
+        case .Task_Shader: return { .TASK_SHADER_EXT }
+        case .Mesh_Shader: return { .MESH_SHADER_EXT }
         case .All: return { .ALL_COMMANDS }
     }
     return {}
