@@ -103,6 +103,23 @@ public struct ComputePipelineData<TData = void> {
     }
 }
 
+public struct MeshPipelineData<TTaskData = void, TMeshletData = void, TFragmentData = void> {
+    public property task : TTaskData* {
+        [ForceInline]
+        get { return (TTaskData*)__push_mesh.taskData; }
+    }
+
+    public property meshlet : TMeshletData* {
+        [ForceInline]
+        get { return (TMeshletData*)__push_mesh.meshletData; }
+    }
+
+    public property frag : TFragmentData* {
+        [ForceInline]
+        get { return (TFragmentData*)__push_mesh.fragData; }
+    }
+}
+
 public SamplerState getSampler(uint samplerIndex) 
 {
     return samplerHeap[NonUniformResourceIndex(samplerIndex)];
